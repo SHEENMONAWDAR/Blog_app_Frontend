@@ -1,5 +1,7 @@
 // -------STRINGS
 const baseURL = 'http://10.0.2.2:8000/api';
+const imageURL = 'http://10.0.2.2:8000';
+const profileURL = 'http://10.0.2.2:8000';
 const loginURL = baseURL + '/login';
 const registerURL = baseURL + '/register';
 const logoutURL = baseURL + '/logout';

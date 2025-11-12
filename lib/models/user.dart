@@ -1,4 +1,6 @@
-class User{
+import 'package:blog_app/constant.dart';
+
+class User {
   int? id;
   String? name;
   String? image;
@@ -13,14 +15,19 @@ class User{
     this.token,
   });
 
-  // function to convert json data to user model
-  factory User.fromJson(Map<String,dynamic> json){
-  return User(
-    id: json['user']['id'],
-    name: json['user']['name'],
-    image: json['user']['image'],
-    email: json['user']['email'],
-    token: json['user']['token'],
-  );
+  // ✅ Correct conversion from backend JSON
+  factory User.fromJson(Map<String, dynamic> json) {
+    // handle both full API response and plain user map
+    final userData = json['user'] ?? json;
+
+    return User(
+      id: userData['id'],
+      name: userData['name'],
+      image: userData['image'] != null
+        ? "$imageURL/${userData['image']}"
+        : null,
+      email: userData['email'],
+      token: json['token'], // token will be null for non-login responses
+    );
   }
 }

@@ -1,4 +1,3 @@
-import 'package:blog_app/screens/Home.dart';
 import 'package:flutter/material.dart';
 
 import 'screens/Loading.dart';
@@ -13,10 +12,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
-      home: const Home(),
+      home: const Loading(),
     );
   }
 }

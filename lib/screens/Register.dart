@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:blog_app/services/user_service.dart';
 import 'package:blog_app/models/api_response.dart';
 import 'Home.dart';
@@ -21,16 +23,37 @@ class _RegisterState extends State<Register> {
   bool _loading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  File? _imageFile;
+
+  // 🔹 Pick image
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   // 🔹 Function to register user
   void _registerUser() async {
     if (_formKey.currentState!.validate()) {
+      if (_imageFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select a profile image")),
+        );
+        return;
+      }
+
       setState(() => _loading = true);
 
       ApiResponse response = await register(
         _nameController.text,
         _emailController.text,
         _passwordController.text,
+        imageFile: _imageFile, // 🔸 Pass image file
       );
 
       setState(() => _loading = false);
@@ -59,7 +82,7 @@ class _RegisterState extends State<Register> {
             key: _formKey,
             child: Column(
               children: [
-                const SizedBox(height: 80),
+                const SizedBox(height: 40),
                 const Text(
                   "Create Account",
                   style: TextStyle(
@@ -72,6 +95,38 @@ class _RegisterState extends State<Register> {
                 const Text(
                   "Please fill in the details to register",
                   style: TextStyle(color: Colors.black54),
+                ),
+                const SizedBox(height: 30),
+
+                // 🔸 Profile Image Picker
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage:
+                          _imageFile != null ? FileImage(_imageFile!) : null,
+                      child: _imageFile == null
+                          ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                          : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 4,
+                      child: InkWell(
+                        onTap: _pickImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.indigo,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 30),
 

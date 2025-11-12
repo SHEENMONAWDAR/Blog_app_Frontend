@@ -1,3 +1,4 @@
+import 'package:blog_app/screens/Add_Posts_page.dart';
 import 'package:flutter/material.dart';
 import 'Posts_page.dart';
 import 'profile.dart';
@@ -33,7 +34,10 @@ class _HomeState extends State<Home> {
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          debugPrint("Floating Action Button pressed");
+          Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddPostsPage()),
+            );
         },
         child: const Icon(Icons.add),
       ),

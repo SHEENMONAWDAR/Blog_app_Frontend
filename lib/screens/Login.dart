@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blog_app/services/user_service.dart';
 import 'package:blog_app/models/api_response.dart';
+import 'package:blog_app/models/user.dart';
 import 'Home.dart';
-import 'Register.dart'; // 👈 Import Register page
+import 'Register.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -18,30 +20,33 @@ class _LoginState extends State<Login> {
   bool _loading = false;
   bool _isPasswordVisible = false;
 
-  void _loginUser() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _loading = true);
+  // ✅ Login logic
+void _loginUser() async {
+  if (_formKey.currentState!.validate()) {
+    setState(() => _loading = true);
 
-      ApiResponse response = await login(
-        _emailController.text,
-        _passwordController.text,
+    ApiResponse response = await login(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
+    if (response.error == null) {
+      // ✅ Already saved automatically inside login()
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const Home()),
+        (route) => false,
       );
-
-      if (response.error == null) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const Home()),
-          (route) => false,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${response.error}')),
-        );
-      }
-
-      setState(() => _loading = false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${response.error}')),
+      );
     }
+
+    setState(() => _loading = false);
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +59,8 @@ class _LoginState extends State<Login> {
             child: Column(
               children: [
                 const SizedBox(height: 100),
+
+                // 🔹 Title
                 const Text(
                   "Login",
                   style: TextStyle(
@@ -64,12 +71,13 @@ class _LoginState extends State<Login> {
                 ),
                 const SizedBox(height: 30),
 
-                // 🔹 Email Field (fixed: not obscure)
+                // 🔹 Email Field
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
                     labelText: "Email",
                     prefixIcon: Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(),
                   ),
                   validator: (value) =>
                       value!.isEmpty ? "Please enter your email" : null,
@@ -83,6 +91,7 @@ class _LoginState extends State<Login> {
                   decoration: InputDecoration(
                     labelText: "Password",
                     prefixIcon: const Icon(Icons.lock_outline),
+                    border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isPasswordVisible
@@ -99,7 +108,6 @@ class _LoginState extends State<Login> {
                   validator: (value) =>
                       value!.isEmpty ? "Please enter your password" : null,
                 ),
-
                 const SizedBox(height: 30),
 
                 // 🔹 Login Button
@@ -121,7 +129,6 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                       ),
-
                 const SizedBox(height: 25),
 
                 // 🔹 Sign Up Navigation
