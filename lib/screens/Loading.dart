@@ -14,52 +14,63 @@ class Loading extends StatefulWidget {
 }
 
 class _LoadingState extends State<Loading> {
+
   void _loadUserInfo() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
 
     String token = await getToken();
 
-    if (token == '') {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const Login()),
-        (route) => false,
-      );
-    } else {
-      ApiResponse response = await getUserDetail();
+    if (!mounted) return; // prevent crash on unmounted widget
 
-      if (response.error == null) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const Home()),
-          (route) => false,
-        );
-      } else if (response.error == unauthorized) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const Login()),
-          (route) => false,
-        );
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${response.error}')));
-      }
+    if (token.isEmpty) {
+      _goTo(const Login());
+      return;
     }
+
+    ApiResponse res = await getUserDetail();
+
+    if (!mounted) return;
+
+    if (res.error == null) {
+      _goTo(const Home());
+    } else if (res.error == unauthorized) {
+      _goTo(const Login());
+    } else {
+      _showError(res.error!);
+    }
+  }
+
+  void _goTo(Widget page) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+      (route) => false,
+    );
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
   }
 
   @override
   void initState() {
     super.initState();
-    _loadUserInfo();
+
+    // ⚠ Prevent calling Navigator before first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserInfo();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height,
-      color: Colors.white,
-      child: const Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: const Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }

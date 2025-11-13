@@ -409,7 +409,7 @@ class _PostsPageState extends State<PostsPage> {
 
                                 // 📝 Post Body + ❤️ Like
                                 Row(
-                                  mainAxisAlignment:
+                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
