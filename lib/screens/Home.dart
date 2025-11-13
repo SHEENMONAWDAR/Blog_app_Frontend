@@ -13,10 +13,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int currentPage = 0;
 
-  final List<Widget> pages = const [
-    PostsPage(),
-    Profile(),
-  ];
+  final List<Widget> pages = const [PostsPage(), Profile()];
 
   @override
   Widget build(BuildContext context) {
@@ -31,16 +28,16 @@ class _HomeState extends State<Home> {
 
       body: pages[currentPage],
 
-
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.small(
         onPressed: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddPostsPage()),
-            );
+            context,
+            MaterialPageRoute(builder: (context) => const AddPostsPage()),
+          );
         },
         child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
 
       bottomNavigationBar: NavigationBar(
         destinations: const [
