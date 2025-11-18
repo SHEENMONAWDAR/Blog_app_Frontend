@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:blog_app/constant.dart';
 import 'package:blog_app/models/api_response.dart';
 import 'package:blog_app/models/post.dart';
@@ -8,16 +7,16 @@ import 'package:blog_app/services/post_service.dart';
 import 'package:blog_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 
-class PostsPage extends StatefulWidget {
-  const PostsPage({super.key});
+
+class AllPostsPage extends StatefulWidget {
+  const AllPostsPage({super.key});
 
   @override
-  State<PostsPage> createState() => _PostsPageState();
+  State<AllPostsPage> createState() => _AllPostsPageState();
 }
 
-class _PostsPageState extends State<PostsPage> {
+class _AllPostsPageState extends State<AllPostsPage> {
   List<Post> _posts = [];
   bool _loading = true;
   final Set<int> _likedPosts = {}; // store liked IDs locally
@@ -127,203 +126,6 @@ class _PostsPageState extends State<PostsPage> {
     }
   }
 
-  // 🔹 Delete post
-  void _deletePost(int postId) async {
-    bool confirm = await _showDeleteDialog();
-    if (!confirm) return;
-
-    setState(() => _loading = true);
-    ApiResponse response = await deletePost(postId);
-    if (response.error == null) {
-      await _getPosts();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post deleted successfully')),
-      );
-    } else {
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${response.error}')));
-    }
-  }
-
-  // 🔹 Edit post
-  Future<void> _editPost(Post post) async {
-    final TextEditingController _bodyController = TextEditingController(
-      text: post.body ?? '',
-    );
-    File? _selectedImage;
-
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Edit Post'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _bodyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Post body',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 10),
-                _selectedImage != null
-                    ? Image.file(_selectedImage!, height: 120)
-                    : post.image != null && post.image!.isNotEmpty
-                    ? Image.network(post.image!, height: 120)
-                    : const Text("No image selected"),
-                TextButton.icon(
-                  onPressed: () async {
-                    final picked = await ImagePicker().pickImage(
-                      source: ImageSource.gallery,
-                    );
-                    if (picked != null) {
-                      setState(() => _selectedImage = File(picked.path));
-                    }
-                  },
-                  icon: const Icon(Icons.photo),
-                  label: const Text('Change Image'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                setState(() => _loading = true);
-                ApiResponse response = await updatePost(
-                  post.id!,
-                  _bodyController.text.trim(),
-                  _selectedImage,
-                );
-                if (response.error == null) {
-                  await _getPosts();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Post updated successfully')),
-                  );
-                } else {
-                  setState(() => _loading = false);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('${response.error}')));
-                }
-              },
-              child: const Text('Update'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 🔹 Create post
-  Future<void> _createPost() async {
-    final TextEditingController _bodyController = TextEditingController();
-    File? _selectedImage;
-
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Create Post'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _bodyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Post body',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 10),
-                _selectedImage != null
-                    ? Image.file(_selectedImage!, height: 120)
-                    : const Text("No image selected"),
-                TextButton.icon(
-                  onPressed: () async {
-                    final picked = await ImagePicker().pickImage(
-                      source: ImageSource.gallery,
-                    );
-                    if (picked != null) {
-                      setState(() => _selectedImage = File(picked.path));
-                    }
-                  },
-                  icon: const Icon(Icons.add_a_photo),
-                  label: const Text('Select Image'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                setState(() => _loading = true);
-                ApiResponse response = await createPost(
-                  _bodyController.text.trim(),
-                  _selectedImage,
-                );
-                if (response.error == null) {
-                  await _getPosts();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Post created successfully')),
-                  );
-                } else {
-                  setState(() => _loading = false);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('${response.error}')));
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 🔹 Confirm delete dialog
-  Future<bool> _showDeleteDialog() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Delete Post'),
-            content: const Text('Are you sure you want to delete this post?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
 
   @override
   void initState() {
@@ -337,6 +139,7 @@ class _PostsPageState extends State<PostsPage> {
       appBar: AppBar(
         title: const Text("All Posts"),
         backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
         centerTitle: true,
       ),
       body: _loading
@@ -451,29 +254,6 @@ class _PostsPageState extends State<PostsPage> {
                                         fontSize: 13,
                                         color: Colors.grey.shade600,
                                       ),
-                                    ),
-                                    PopupMenuButton<String>(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      onSelected: (value) {
-                                        if (value == 'edit') _editPost(post);
-                                        if (value == 'delete')
-                                          _deletePost(post.id!);
-                                      },
-                                      itemBuilder: (context) => const [
-                                        PopupMenuItem(
-                                          value: 'edit',
-                                          child: Text('Edit'),
-                                        ),
-                                        PopupMenuItem(
-                                          value: 'delete',
-                                          child: Text(
-                                            'Delete',
-                                            style: TextStyle(color: Colors.red),
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ],
                                 ),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blog_app/services/user_service.dart';
 import 'package:blog_app/models/api_response.dart';
-import 'package:blog_app/models/user.dart';
 import 'Home.dart';
 import 'Register.dart';
 
@@ -80,7 +78,7 @@ void _loginUser() async {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) =>
-                      value!.isEmpty ? "Please enter your email" : null,
+                     (value == null || value.isEmpty) ? "Please enter your email" : null
                 ),
                 const SizedBox(height: 20),
 

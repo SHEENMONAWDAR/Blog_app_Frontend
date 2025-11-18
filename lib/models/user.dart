@@ -15,9 +15,8 @@ class User {
     this.token,
   });
 
-  // ✅ Correct conversion from backend JSON
   factory User.fromJson(Map<String, dynamic> json) {
-    // handle both full API response and plain user map
+    
     final userData = json['user'] ?? json;
 
     return User(
@@ -27,7 +26,7 @@ class User {
         ? "$imageURL/${userData['image']}"
         : null,
       email: userData['email'],
-      token: json['token'], // token will be null for non-login responses
+      token: json['token'], 
     );
   }
 }

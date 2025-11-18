@@ -136,12 +136,15 @@ Future<ApiResponse> getUserPosts(int userId) async {
 
     switch (response.statusCode) {
       case 200:
-        List<dynamic> postsJson = jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        List<dynamic> postsJson = data['posts'] ?? [];
         apiResponse.data = postsJson.map((p) => Post.fromJson(p)).toList();
         break;
+
       case 401:
         apiResponse.error = unauthorized;
         break;
+
       default:
         apiResponse.error = somethingWentWrong;
         break;
@@ -152,6 +155,7 @@ Future<ApiResponse> getUserPosts(int userId) async {
 
   return apiResponse;
 }
+
 
 // 🔹 Delete Post
 Future<ApiResponse> deletePost(int postId) async {

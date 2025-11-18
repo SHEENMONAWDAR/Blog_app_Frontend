@@ -35,7 +35,7 @@ class _ProfileState extends State<Profile> {
 
   // 🔹 Logout function (using your logout logic)
   Future<void> _logoutUser() async {
-    bool success = await logout(); // from user_service.dart
+    bool success = await logout(); 
     if (success) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const Login()), 

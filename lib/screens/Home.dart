@@ -1,6 +1,7 @@
 import 'package:blog_app/screens/Add_Posts_page.dart';
+import 'package:blog_app/screens/All_post_page.dart';
 import 'package:flutter/material.dart';
-import 'Posts_page.dart';
+import 'My_Posts_page.dart';
 import 'profile.dart';
 
 class Home extends StatefulWidget {
@@ -13,7 +14,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int currentPage = 0;
 
-  final List<Widget> pages = const [PostsPage(), Profile()];
+  final List<Widget> pages = const [AllPostsPage(),MyPostsPage(), Profile()];
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +43,7 @@ class _HomeState extends State<Home> {
       bottomNavigationBar: NavigationBar(
         destinations: const [
           NavigationDestination(icon: Icon(Icons.article), label: "All Posts"),
+          NavigationDestination(icon: Icon(Icons.article), label: "My Posts"),
           NavigationDestination(icon: Icon(Icons.person), label: "Profile"),
         ],
         selectedIndex: currentPage,
