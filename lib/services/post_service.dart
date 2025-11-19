@@ -101,44 +101,22 @@ Future<ApiResponse> getPosts() async {
     String token = await getToken();
     final response = await http.get(
       Uri.parse(postsURL),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
-
-    switch (response.statusCode) {
-      case 200:
-        List<dynamic> postsJson = jsonDecode(response.body);
-        apiResponse.data = postsJson.map((p) => Post.fromJson(p)).toList();
-        break;
-      case 401:
-        apiResponse.error = unauthorized;
-        break;
-      default:
-        apiResponse.error = somethingWentWrong;
-        break;
-    }
-  } catch (e) {
-    print("❌ Error in [function name]: $e");
-    apiResponse.error = serverError;
-  }
-
-  return apiResponse;
-}
-
-// 🔹 Get posts by specific user
-Future<ApiResponse> getUserPosts(int userId) async {
-  ApiResponse apiResponse = ApiResponse();
-  try {
-    String token = await getToken();
-    final response = await http.get(
-      Uri.parse('$postsURL/user/$userId'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
     );
 
     switch (response.statusCode) {
       case 200:
         final data = jsonDecode(response.body);
-        List<dynamic> postsJson = data['posts'] ?? [];
-        apiResponse.data = postsJson.map((p) => Post.fromJson(p)).toList();
+
+        // 👇 backend returns { "posts": [...] }
+        if (data is Map<String, dynamic> && data['posts'] is List) {
+          apiResponse.data =
+              (data['posts'] as List).map((p) => Post.fromJson(p)).toList();
+        }
+
         break;
 
       case 401:
@@ -147,7 +125,46 @@ Future<ApiResponse> getUserPosts(int userId) async {
 
       default:
         apiResponse.error = somethingWentWrong;
+    }
+  } catch (e) {
+    print("❌ Error in getPosts(): $e");
+    apiResponse.error = serverError;
+  }
+
+  return apiResponse;
+}
+
+
+// 🔹 Get posts by specific user
+Future<ApiResponse> getUserPosts(int userId) async {
+  ApiResponse apiResponse = ApiResponse();
+
+  try {
+    String token = await getToken();
+
+    final response = await http.get(
+      Uri.parse('$postsURL/user/$userId'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
+    );
+
+    switch (response.statusCode) {
+      case 200:
+        final data = jsonDecode(response.body);
+
+        // backend returns: { "posts": [...] }
+        apiResponse.data =
+            (data['posts'] as List).map((p) => Post.fromJson(p)).toList();
         break;
+
+      case 401:
+        apiResponse.error = unauthorized;
+        break;
+
+      default:
+        apiResponse.error = somethingWentWrong;
     }
   } catch (e) {
     apiResponse.error = serverError;
@@ -155,6 +172,7 @@ Future<ApiResponse> getUserPosts(int userId) async {
 
   return apiResponse;
 }
+
 
 
 // 🔹 Delete Post

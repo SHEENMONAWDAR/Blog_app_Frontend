@@ -1,10 +1,8 @@
-import 'package:blog_app/constant.dart';
-import 'package:blog_app/models/api_response.dart';
-import 'package:blog_app/services/user_service.dart';
 import 'package:flutter/material.dart';
-
-import 'Home.dart';
+import 'package:provider/provider.dart';
 import 'Login.dart';
+import 'Home.dart';
+import '../providers/auth_provider.dart';
 
 class Loading extends StatefulWidget {
   const Loading({super.key});
@@ -14,63 +12,42 @@ class Loading extends StatefulWidget {
 }
 
 class _LoadingState extends State<Loading> {
+  Future<void> _init() async {
+    // Wait a tick so providers initialize
+    await Future.delayed(const Duration(milliseconds: 200));
 
-  void _loadUserInfo() async {
-    await Future.delayed(const Duration(seconds: 1));
-
-    String token = await getToken();
-
-    if (!mounted) return; // prevent crash on unmounted widget
-
-    if (token.isEmpty) {
-      _goTo(const Login());
-      return;
-    }
-
-    ApiResponse res = await getUserDetail();
+    final auth = context.read<AuthProvider>();
+    await auth.loadUser(); // ensures token + user loaded
 
     if (!mounted) return;
 
-    if (res.error == null) {
-      _goTo(const Home());
-    } else if (res.error == unauthorized) {
-      _goTo(const Login());
+    if (auth.user != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const Home()),
+      );
     } else {
-      _showError(res.error!);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const Login()),
+      );
     }
-  }
-
-  void _goTo(Widget page) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-      (route) => false,
-    );
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
   }
 
   @override
   void initState() {
     super.initState();
-
-    // ⚠ Prevent calling Navigator before first frame
+    // call after first frame to avoid navigator issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUserInfo();
+      _init();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: Colors.white,
-      body: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

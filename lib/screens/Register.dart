@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:blog_app/services/user_service.dart';
-import 'package:blog_app/models/api_response.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import 'Home.dart';
 import 'Login.dart';
 
@@ -25,55 +25,55 @@ class _RegisterState extends State<Register> {
   bool _isConfirmPasswordVisible = false;
   File? _imageFile;
 
-  // 🔹 Pick image
   Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (picked != null) {
+      setState(() => _imageFile = File(picked.path));
     }
   }
 
-  // 🔹 Function to register user
-  void _registerUser() async {
-    if (_formKey.currentState!.validate()) {
-      if (_imageFile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select a profile image")),
-        );
-        return;
-      }
+  Future<void> _registerUser() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      setState(() => _loading = true);
-
-      ApiResponse response = await register(
-        _nameController.text,
-        _emailController.text,
-        _passwordController.text,
-        imageFile: _imageFile, // 🔸 Pass image file
+    if (_imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a profile image")),
       );
+      return;
+    }
 
-      setState(() => _loading = false);
+    setState(() => _loading = true);
 
-      if (response.error == null) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const Home()),
-          (route) => false,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${response.error}')),
-        );
-      }
+    final auth = context.read<AuthProvider>();
+    final error = await auth.registerUser(
+      _nameController.text.trim(),
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+      _imageFile,
+    );
+
+    setState(() => _loading = false);
+
+    if (error == null) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const Home()),
+        (route) => false,
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -85,31 +85,19 @@ class _RegisterState extends State<Register> {
                 const SizedBox(height: 40),
                 const Text(
                   "Create Account",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
-                  ),
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.indigo),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  "Please fill in the details to register",
-                  style: TextStyle(color: Colors.black54),
-                ),
+                const Text("Please fill in the details to register", style: TextStyle(color: Colors.black54)),
                 const SizedBox(height: 30),
-
-                // 🔸 Profile Image Picker
                 Stack(
                   alignment: Alignment.bottomRight,
                   children: [
                     CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage:
-                          _imageFile != null ? FileImage(_imageFile!) : null,
-                      child: _imageFile == null
-                          ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                          : null,
+                      backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                      child: _imageFile == null ? const Icon(Icons.person, size: 60, color: Colors.grey) : null,
                     ),
                     Positioned(
                       bottom: 0,
@@ -118,10 +106,7 @@ class _RegisterState extends State<Register> {
                         onTap: _pickImage,
                         child: Container(
                           padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.indigo,
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: const BoxDecoration(color: Colors.indigo, shape: BoxShape.circle),
                           child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                         ),
                       ),
@@ -129,32 +114,18 @@ class _RegisterState extends State<Register> {
                   ],
                 ),
                 const SizedBox(height: 30),
-
-                // 🔸 Name
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: "Name",
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Please enter your name" : null,
+                  decoration: const InputDecoration(labelText: "Name", prefixIcon: Icon(Icons.person_outline)),
+                  validator: (value) => (value == null || value.isEmpty) ? "Please enter your name" : null,
                 ),
                 const SizedBox(height: 20),
-
-                // 🔸 Email
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: "Email",
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Please enter your email" : null,
+                  decoration: const InputDecoration(labelText: "Email", prefixIcon: Icon(Icons.email_outlined)),
+                  validator: (value) => (value == null || value.isEmpty) ? "Please enter your email" : null,
                 ),
                 const SizedBox(height: 20),
-
-                // 🔸 Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -162,24 +133,13 @@ class _RegisterState extends State<Register> {
                     labelText: "Password",
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() =>
-                            _isPasswordVisible = !_isPasswordVisible);
-                      },
+                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
                   ),
-                  validator: (value) => value!.length < 6
-                      ? "Password must be at least 6 characters"
-                      : null,
+                  validator: (value) => (value == null || value.length < 6) ? "Password must be at least 6 characters" : null,
                 ),
                 const SizedBox(height: 20),
-
-                // 🔸 Confirm Password
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_isConfirmPasswordVisible,
@@ -187,26 +147,14 @@ class _RegisterState extends State<Register> {
                     labelText: "Confirm Password",
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        _isConfirmPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() => _isConfirmPasswordVisible =
-                            !_isConfirmPasswordVisible);
-                      },
+                      icon: Icon(_isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                      onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
                     ),
                   ),
-                  validator: (value) => value != _passwordController.text
-                      ? "Passwords do not match"
-                      : null,
+                  validator: (value) => value != _passwordController.text ? "Passwords do not match" : null,
                 ),
-
                 const SizedBox(height: 30),
-
-                // 🔹 Register Button
-                _loading
+                (_loading || auth.loading)
                     ? const CircularProgressIndicator()
                     : SizedBox(
                         width: double.infinity,
@@ -214,42 +162,22 @@ class _RegisterState extends State<Register> {
                           onPressed: _registerUser,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.indigo,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text(
-                            "Register",
-                            style: TextStyle(
-                                fontSize: 16, color: Colors.white),
-                          ),
+                          child: const Text("Register", style: TextStyle(fontSize: 16, color: Colors.white)),
                         ),
                       ),
-
                 const SizedBox(height: 20),
-
-                // 🔹 Already have account? Login
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already have an account? "),
+                    const Text("Already have account? "),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Login()),
-                        );
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Login()));
                       },
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: const Text("Login", style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),

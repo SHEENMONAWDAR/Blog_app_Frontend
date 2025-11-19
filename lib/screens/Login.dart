@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:blog_app/services/user_service.dart';
-import 'package:blog_app/models/api_response.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import 'Home.dart';
 import 'Register.dart';
 
@@ -15,39 +15,38 @@ class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _loading = false;
+
   bool _isPasswordVisible = false;
 
-  // ✅ Login logic
-void _loginUser() async {
-  if (_formKey.currentState!.validate()) {
-    setState(() => _loading = true);
+  Future<void> _loginUser() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    ApiResponse response = await login(
+    final auth = context.read<AuthProvider>();
+    final error = await auth.loginUser(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
 
-    if (response.error == null) {
-      // ✅ Already saved automatically inside login()
+    if (error == null) {
+      // success
+      if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const Home()),
+        MaterialPageRoute(builder: (_) => const Home()),
         (route) => false,
       );
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${response.error}')),
+        SnackBar(content: Text(error)),
       );
     }
-
-    setState(() => _loading = false);
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -57,8 +56,6 @@ void _loginUser() async {
             child: Column(
               children: [
                 const SizedBox(height: 100),
-
-                // 🔹 Title
                 const Text(
                   "Login",
                   style: TextStyle(
@@ -68,8 +65,6 @@ void _loginUser() async {
                   ),
                 ),
                 const SizedBox(height: 30),
-
-                // 🔹 Email Field
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -78,11 +73,9 @@ void _loginUser() async {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) =>
-                     (value == null || value.isEmpty) ? "Please enter your email" : null
+                      (value == null || value.isEmpty) ? "Please enter email" : null,
                 ),
                 const SizedBox(height: 20),
-
-                // 🔹 Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -92,24 +85,18 @@ void _loginUser() async {
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
+                        setState(() => _isPasswordVisible = !_isPasswordVisible);
                       },
                     ),
                   ),
                   validator: (value) =>
-                      value!.isEmpty ? "Please enter your password" : null,
+                      (value == null || value.isEmpty) ? "Please enter password" : null,
                 ),
                 const SizedBox(height: 30),
-
-                // 🔹 Login Button
-                _loading
+                auth.loading
                     ? const CircularProgressIndicator()
                     : SizedBox(
                         width: double.infinity,
@@ -117,19 +104,15 @@ void _loginUser() async {
                           onPressed: _loginUser,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.indigo,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           child: const Text(
                             "Login",
-                            style:
-                                TextStyle(fontSize: 16, color: Colors.white),
+                            style: TextStyle(fontSize: 16, color: Colors.white),
                           ),
                         ),
                       ),
                 const SizedBox(height: 25),
-
-                // 🔹 Sign Up Navigation
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -138,9 +121,7 @@ void _loginUser() async {
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const Register(),
-                          ),
+                          MaterialPageRoute(builder: (_) => const Register()),
                         );
                       },
                       child: const Text(
